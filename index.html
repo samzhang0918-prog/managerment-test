@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>带队吧，总监 - 智驾量产沙盘（纯管理者版）</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="app" class="game-container">
+    <!-- 顶部常驻调试栏（仅 ?debug=1 生效） -->
+    <div id="debug-bar" class="debug-bar hidden">
+      <span class="debug-tag">DEBUG 真值透视</span>
+      <span id="debug-info"></span>
+    </div>
+
+    <!-- 页面 1：首页 -->
+    <section id="screen-home" class="screen active">
+      <div class="hero-box">
+        <div class="badge-tag">智驾量产沙盘 · 纯管理者版</div>
+        <h1 class="main-title">带队吧，总监</h1>
+        <p class="subtitle">6 个月 · 6 支队伍 · 8 项管理工具 · 冲刺过年前 SOP</p>
+        <div class="intro-card">
+          <p>你空降成为智驾量产研发总监。面对 6 个背景与脾性迥异的专业团队，你不再亲自写代码或盯路测，而是<strong>决定推行什么管理制度、使用什么管理工具、如何处理跨部门内耗与高层焦虑</strong>。</p>
+          <div class="quote-box">“当指标变成高压考核目标时，它就不再是一个好指标。” —— 古德哈特定律</div>
+        </div>
+        <div class="input-group">
+          <label for="project-name-input">输入项目代号（相同代号可复现同局随机）：</label>
+          <input type="text" id="project-name-input" maxlength="16" placeholder="例如：代号-泰山 / 蓬莱-50" value="代号-麒麟">
+        </div>
+        <button id="btn-start" class="btn btn-primary btn-block">就任总监 · 开始排兵布阵</button>
+      </div>
+    </section>
+
+    <!-- 页面 2：组队页面（6 槽） -->
+    <section id="screen-team-select" class="screen">
+      <div class="screen-header">
+        <div class="step-indicator">第一步：搭班子（配置 6 大管理槽位）</div>
+        <h2>组建你的量产作战梯队</h2>
+        <p class="header-desc">每方向固定 2 支候选团队。请仔细阅读团队特质与口碑，谨防高薪汇报型诱饵！</p>
+      </div>
+
+      <div id="team-slots-container" class="team-slots-list">
+        <!-- 动态渲染 6 个方向与候选卡片 -->
+      </div>
+
+      <div class="bottom-action-bar">
+        <div class="slot-summary">已就位：<span id="slots-filled-count">0</span> / 6</div>
+        <button id="btn-to-roster-confirm" class="btn btn-primary" disabled>查看团队配置总表</button>
+      </div>
+    </section>
+
+    <!-- 页面 3：确认名单（Roster Confirm） -->
+    <section id="screen-roster-confirm" class="screen">
+      <div class="screen-header">
+        <div class="step-indicator">第二步：签字就绪</div>
+        <h2>量产研发组织总装表</h2>
+        <p class="header-desc">确认这 6 支队伍将陪你度过接下来的 180 天量产大考。</p>
+      </div>
+
+      <div class="roster-overview-card">
+        <div class="roster-stat-grid">
+          <div class="stat-item">
+            <span class="label">研发总人数</span>
+            <span id="roster-total-hc" class="value">0 人</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">每月薪酬刚性总包</span>
+            <span id="roster-total-salary" class="value highlight">0 万/月</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">总预算池</span>
+            <span class="value">8000 万</span>
+          </div>
+          <div class="stat-item">
+            <span class="label">交付窗口</span>
+            <span class="value">6 个月 (过年前 SOP)</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="roster-teams-list" class="roster-list">
+        <!-- 6 支选定团队清单 -->
+      </div>
+
+      <div class="button-group flex-col">
+        <button id="btn-confirm-and-enter-m1" class="btn btn-primary btn-block">签字任命 · 正式接管团队 (进入 M1)</button>
+        <button id="btn-back-to-team-select" class="btn btn-secondary btn-block">调整团队配置</button>
+      </div>
+    </section>
+
+    <!-- 页面 4：月度工作台看板 (M1-M6) -->
+    <section id="screen-monthly-board" class="screen">
+      <div class="board-header">
+        <div class="month-badge"><span id="board-month-label">M1</span> / M6</div>
+        <div class="project-tag"><span id="board-project-name">代号-麒麟</span></div>
+      </div>
+
+      <!-- 核心管理资源仪表 -->
+      <div class="resource-dashboard">
+        <div class="res-card">
+          <span class="res-title">总监剩余预算</span>
+          <span id="dash-budget" class="res-val highlight">8000 万</span>
+          <span id="dash-payroll" class="res-sub">月度工资 -0 万</span>
+        </div>
+        <div class="res-card">
+          <span class="res-title">团队士气/凝聚力</span>
+          <span id="dash-morale" class="res-val">72</span>
+          <span id="dash-morale-state" class="res-sub">状态正常</span>
+        </div>
+      </div>
+
+      <!-- 组织健康度三态红绿灯 -->
+      <div class="gates-dashboard">
+        <div class="gate-item">
+          <span class="gate-label">目标对齐度</span>
+          <span id="gate-freeze" class="gate-pill risk">风险蔓延</span>
+        </div>
+        <div class="gate-item">
+          <span class="gate-label">质量红线敬畏</span>
+          <span id="gate-safety" class="gate-pill risk">尚未放行</span>
+        </div>
+        <div class="gate-item">
+          <span class="gate-label">车企外部协同</span>
+          <span id="gate-oem" class="gate-pill converging">协同中</span>
+        </div>
+      </div>
+
+      <!-- 月度各组汇报假仪表（含隔级摸底真值透视） -->
+      <div class="report-box">
+        <div class="report-header">
+          <h3>本月各组 TL 呈报之工作简报</h3>
+          <span class="report-subtip">（注：表面周报存在汇报修饰水分）</span>
+        </div>
+        <div class="report-grid">
+          <div class="metric-row">
+            <span class="m-name">感知目标覆盖率</span>
+            <span id="rep-coverage" class="m-val">68%</span>
+          </div>
+          <div class="metric-row">
+            <span class="m-name">路测总里程数</span>
+            <span id="rep-mileage" class="m-val">12 万公里</span>
+          </div>
+          <div class="metric-row">
+            <span class="m-name">规控影子模式准确度</span>
+            <span id="rep-shadow" class="m-val">74%</span>
+          </div>
+          <div class="metric-row">
+            <span class="m-name">车企高管满意度 (NPS)</span>
+            <span id="rep-nps" class="m-val">71</span>
+          </div>
+          <div class="metric-row">
+            <span class="m-name">数据难例标注闭环数</span>
+            <span id="rep-corners" class="m-val">16 个</span>
+          </div>
+        </div>
+
+        <!-- 隔级 1-on-1 穿透后的一线真相区 -->
+        <div id="audit-truth-box" class="audit-truth-box hidden">
+          <div class="audit-truth-title">🔍 Skip-level 隔级摸底 · 一线真实水位</div>
+          <div id="audit-truth-content" class="audit-truth-content"></div>
+        </div>
+      </div>
+
+      <!-- 资金链断裂预警条 -->
+      <div id="overrun-alert-banner" class="alert-banner hidden">
+        ⚠️ 预算严重透支！公司内部已开始流传团队资金链断裂谣言，全员人心惶惶！
+      </div>
+
+      <div class="action-footer">
+        <button id="btn-enter-action-modal" class="btn btn-primary btn-block">决定本月管理手段</button>
+      </div>
+    </section>
+
+    <!-- 弹窗/抽屉：8 大管理工具选择 -->
+    <div id="modal-action-select" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>推行本月管理手段 / 工具</h3>
+          <button id="btn-close-action-modal" class="close-x">&times;</button>
+        </div>
+        <p class="modal-desc">每月精力有限，仅可推行一项核心管理动作。请根据当前团队状态慎重决策：</p>
+
+        <div id="actions-list" class="actions-list">
+          <!-- 8 大管理工具卡片 -->
+        </div>
+
+        <!-- 方向选择器（若动作需要） -->
+        <div id="action-target-dir-container" class="sub-selector-box hidden">
+          <h4>请指定重点推行的管理方向：</h4>
+          <div id="action-dir-options" class="dir-options-grid"></div>
+        </div>
+
+        <!-- 考核指挥棒二级选项（KPI vs OKR） -->
+        <div id="action-road-scene-container" class="sub-selector-box hidden">
+          <h4>请确定路测团队的考核导向：</h4>
+          <div id="road-scene-options" class="sub-options-grid"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-execute-action" class="btn btn-primary btn-block" disabled>确认推行该管理手段</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗：管理动作执行反馈 -->
+    <div id="modal-action-result" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>管理动作反馈与组织反应</h3>
+        </div>
+        <div id="action-result-body" class="result-body">
+          <!-- 动作带来的组织反噬或协同提升 -->
+        </div>
+        <div class="modal-footer">
+          <button id="btn-continue-to-emergencies" class="btn btn-primary btn-block">面对突发管理困境</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 页面 5：突发管理困境 (Emergencies) -->
+    <section id="screen-emergencies" class="screen">
+      <div class="screen-header">
+        <div class="step-indicator">突发管理困境 <span id="emerg-step-idx">(1/1)</span></div>
+        <h2 id="emerg-title">突发管理困境标题</h2>
+      </div>
+
+      <div class="emergency-main-card">
+        <p id="emerg-body" class="emerg-body-text">困境正文描述</p>
+      </div>
+
+      <div class="options-container">
+        <div class="option-card" data-opt="A">
+          <div class="opt-tag">手段 A · 机制赋能 / 守住底线</div>
+          <div id="emerg-opt-a-text" class="opt-title">选项 A 文案</div>
+          <div id="emerg-opt-a-desc" class="opt-desc">选项 A 影响说明</div>
+        </div>
+        <div class="option-card" data-opt="B">
+          <div class="opt-tag">手段 B · 威权施压 / 迎合妥协</div>
+          <div id="emerg-opt-b-text" class="opt-title">选项 B 文案</div>
+          <div id="emerg-opt-b-desc" class="opt-desc">选项 B 影响说明</div>
+        </div>
+        <div class="option-card" data-opt="C">
+          <div class="opt-tag">手段 C · 和稀泥 / 糊弄应付</div>
+          <div id="emerg-opt-c-text" class="opt-title">选项 C 文案</div>
+          <div id="emerg-opt-c-desc" class="opt-desc">选项 C 影响说明</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 页面 6：SOP 质量红线终局抉择 -->
+    <section id="screen-sop" class="screen">
+      <div class="screen-header">
+        <div class="step-indicator">M6 终局门禁：过年前 SOP 放行评审</div>
+        <h2>6 项关键量产质量红线决断</h2>
+        <p class="header-desc">
+          每项红线可选择<strong>「花钱延期彻底修复」</strong>或<strong>「Waive（把风险焊死在量产车上）」</strong>。<br>
+          <span class="warning-text">未做隔级摸底审计的项显示为各组「自报低风险」，请警惕虚假繁荣！</span>
+        </p>
+      </div>
+
+      <div class="sop-top-bar">
+        <div class="sop-meta">
+          <span>剩余预算: <strong id="sop-cur-budget">0 万</strong></span>
+          <span>当前延期: <strong id="sop-cur-delay">0 周</strong></span>
+        </div>
+        <button id="btn-waive-all" class="btn btn-outline btn-sm">一键全部 Waive</button>
+      </div>
+
+      <div id="sop-risk-hint" class="sop-risk-hint">提示：放行真实风险较高的红线项会扣安全分，修复投入不足时每放行一项扣 10 分；安全分 ≤25 直接判定项目失败。</div>
+
+      <div id="sop-error-banner" class="sop-error-banner hidden"></div>
+
+      <div id="sop-items-list" class="sop-list">
+        <!-- 6 条质量红线卡片 -->
+      </div>
+
+      <div class="sop-bottom-bar">
+        <div class="sop-progress-tip">已决断：<span id="sop-decided-count">0</span> / 6 项</div>
+        <button id="btn-confirm-sop-release" class="btn btn-primary btn-block" disabled>签字盖章 · 确认放行整车下线</button>
+      </div>
+    </section>
+
+    <!-- 页面 7：结局评级与真相复盘 -->
+    <section id="screen-outcome" class="screen">
+      <div id="outcome-hero" class="outcome-hero">
+        <div id="outcome-grade-badge" class="grade-badge">A</div>
+        <h2 id="outcome-title" class="outcome-title">SOP 顺利放行</h2>
+        <p id="outcome-subtitle" class="outcome-subtitle">A · 综合评分 88/100</p>
+        <div id="outcome-insight" class="outcome-insight hidden"></div>
+      </div>
+
+      <!-- 五轴雷达维度 -->
+      <div class="axes-container">
+        <h3>量产组织五维体检报告</h3>
+        <div class="axis-row">
+          <div class="axis-header">
+            <span class="axis-name">底线敬畏 (安全)</span>
+            <span id="axis-safety-score" class="axis-score">85</span>
+          </div>
+          <div class="axis-bar-bg"><div id="axis-safety-bar" class="axis-bar-fill" style="width: 85%"></div></div>
+          <div id="axis-safety-desc" class="axis-desc">红线未被引爆，敬畏意识经受住了检验</div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-header">
+            <span class="axis-name">真实战力 (工程)</span>
+            <span id="axis-func-score" class="axis-score">72</span>
+          </div>
+          <div class="axis-bar-bg"><div id="axis-func-bar" class="axis-bar-fill" style="width: 72%"></div></div>
+          <div id="axis-func-desc" class="axis-desc">真实工程水位扎实，雨夜泛化过关</div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-header">
+            <span class="axis-name">协同兑现 (交付)</span>
+            <span id="axis-deliv-score" class="axis-score">80</span>
+          </div>
+          <div class="axis-bar-bg"><div id="axis-deliv-bar" class="axis-bar-fill" style="width: 80%"></div></div>
+          <div id="axis-deliv-desc" class="axis-desc">外部预期管理与内部节奏双向兑现</div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-header">
+            <span class="axis-name">组织人效 (成本)</span>
+            <span id="axis-cost-score" class="axis-score">90</span>
+          </div>
+          <div class="axis-bar-bg"><div id="axis-cost-bar" class="axis-bar-fill" style="width: 90%"></div></div>
+          <div id="axis-cost-desc" class="axis-desc">预算分配合理，没有养闲人</div>
+        </div>
+        <div class="axis-row">
+          <div class="axis-header">
+            <span class="axis-name">团队士气</span>
+            <span id="axis-morale-score" class="axis-score">72</span>
+          </div>
+          <div class="axis-bar-bg"><div id="axis-morale-bar" class="axis-bar-fill" style="width: 72%"></div></div>
+          <div id="axis-morale-desc" class="axis-desc">组织凝聚力高涨，一线骨干信任管理层并保持战斗力</div>
+        </div>
+      </div>
+
+      <!-- 独家：管理风格诊断书 -->
+      <div class="mgmt-profile-card">
+        <div class="profile-header">
+          <span class="profile-badge">管理风格深度诊断</span>
+          <h3 id="profile-title">古德哈特陷阱亲历者</h3>
+        </div>
+        <blockquote id="profile-tagline" class="profile-tagline">“当你把指标变成考核军令状时，你得到的只有精装修的假象。”</blockquote>
+        <p id="profile-desc" class="profile-desc">详细诊断分析...</p>
+      </div>
+
+      <!-- 独家：团队匿名群真实吐槽 -->
+      <div class="anonymous-feedback-box">
+        <h3>💬 团队匿名吐槽群里的真实心声</h3>
+        <p class="feedback-subtip">（以下为 6 支团队私底下对你的真实评价，直面管理的反差真相）</p>
+        <div id="anonymous-feedback-list" class="feedback-list">
+          <!-- 动态渲染 6 支团队私下吐槽卡片 -->
+        </div>
+      </div>
+
+      <!-- 引爆项与未审计项真相揭秘 -->
+      <div class="truth-reveal-card">
+        <h3>量产真相核查单</h3>
+        <div id="truth-items-list" class="truth-list"></div>
+      </div>
+
+      <div class="restart-box">
+        <button id="btn-restart" class="btn btn-primary btn-block">复盘完毕 · 重新上任挑战新局</button>
+      </div>
+    </section>
+  </div>
+
+  <script src="./game-data.js"></script>
+  <script src="./game-engine.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
