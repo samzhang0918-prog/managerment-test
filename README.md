@@ -6,6 +6,8 @@
 
 https://samzhang0918-prog.github.io/managerment-test/
 
+站点由 `.github/workflows/pages.yml` 从 `main` 根目录部署。仓库管理员需要先打开 Settings → Pages → Build and deployment，把 Source 选成 **GitHub Actions**，然后在 Actions 里重跑 “Deploy static content to Pages”。也可以改成 Deploy from a branch，分支选 `main`、目录选 `/ (root)`；那种情况下不必跑上面的 workflow。
+
 ## 本地运行
 
 用浏览器直接打开仓库根目录的 `index.html`。

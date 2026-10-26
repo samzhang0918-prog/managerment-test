@@ -1,4 +1,7 @@
 # Deploy the static game from the repository root to GitHub Pages.
+# A repo admin must enable this once:
+# Settings → Pages → Build and deployment → Source: GitHub Actions
+# Then re-run this workflow. The default token cannot create the Pages site.
 name: Deploy static content to Pages
 
 on:
