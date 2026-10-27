@@ -1,10 +1,30 @@
 // 《带队吧，总监》（智驾量产沙盘·纯管理者版）前端交互控制器
 
 document.addEventListener('DOMContentLoaded', () => {
-  const { PRD_CONFIG, DIRECTIONS, TEAM_CARDS, MONTHLY_ACTIONS, ROAD_SCENE_OPTIONS, SOP_ITEMS, TRAIT_META } = GameData;
+  const { PRD_CONFIG, DIRECTIONS, TEAM_CARDS, MONTHLY_ACTIONS, ROAD_SCENE_OPTIONS, SOP_ITEMS, TRAIT_META, MANAGEMENT_PROFILES } = GameData;
   const { ManagerSandboxGameEngine } = ManagerGameEngine;
 
   const engine = new ManagerSandboxGameEngine();
+  // 本地存档（localStorage）；不可用时自动降级为本局内存，不影响游玩
+  const archiveStore = ArchiveStore.createStore();
+
+  // 突发困境的「提出人」设定（仅用于界面叙事，不参与任何数值结算）
+  const EVENT_SPEAKERS = {
+    e_oem_add:    { avatar: '🚗', name: '车企产品副总裁', role: '北冥汽车 · 甲方高管' },
+    e_iface:      { avatar: '📋', name: 'PMO 周会记录员', role: '刚从会议室出来' },
+    e_no_rain:    { avatar: '🌧️', name: '路测队长', role: '一线 · 代表全队发声' },
+    e_label:      { avatar: '✉️', name: '匿名吹哨人', role: '来自数据团队内部' },
+    e_sign:       { avatar: '🦺', name: '安全负责人', role: '拒绝签字的老专家' },
+    e_competitor: { avatar: '👔', name: '大老板', role: '深夜在高管群 @ 你' },
+    e_ip:         { avatar: '🛠️', name: '一线架构师', role: '小心翼翼地来请示' },
+    e_ot_refuse:  { avatar: '🧑‍💼', name: 'HRBP', role: '人力数据预警' }
+  };
+  const DEFAULT_SPEAKER = { avatar: '📣', name: '组织信号', role: '向你汇报' };
+  const OPTION_TAGS = {
+    A: '手段 A · 机制赋能 / 守住底线',
+    B: '手段 B · 威权施压 / 迎合妥协',
+    C: '手段 C · 和稀泥 / 糊弄应付'
+  };
 
   // DOM 元素缓存
   const screens = {
@@ -48,6 +68,145 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTeamSelectionSlots();
     showScreen('teamSelect');
   });
+
+  // ====================== 1.5 本地存档：管理档案弹窗 ======================
+  const modalArchive = document.getElementById('modal-archive');
+  const btnOpenArchive = document.getElementById('btn-open-archive');
+  const btnOutcomeArchive = document.getElementById('btn-outcome-archive');
+  const btnCloseArchive = document.getElementById('btn-close-archive');
+  const btnClearArchive = document.getElementById('btn-clear-archive');
+  const archiveStorageNote = document.getElementById('archive-storage-note');
+  const archivePanelHistory = document.getElementById('archive-panel-history');
+  const archivePanelAtlas = document.getElementById('archive-panel-atlas');
+  const atlasProgress = document.getElementById('atlas-progress');
+  const archiveTabs = document.querySelectorAll('.archive-tab');
+  let clearArmed = false;
+
+  function formatTime(ts) {
+    if (!ts) return '--';
+    const d = new Date(ts);
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getMonth() + 1}/${d.getDate()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  /** 首页档案按钮上的概览文案 */
+  function refreshArchiveEntry() {
+    const archive = archiveStore.load();
+    const runs = archive.history.length;
+    const unlocked = Object.keys(archive.profiles).length;
+    btnOpenArchive.textContent = runs > 0
+      ? `📁 我的管理档案（${runs} 局 · 画像 ${unlocked}/${MANAGEMENT_PROFILES.length}）`
+      : '📁 我的管理档案';
+  }
+
+  function renderHistoryPanel(archive) {
+    archivePanelHistory.innerHTML = '';
+    if (archive.history.length === 0) {
+      archivePanelHistory.appendChild(el('div', 'archive-empty', '还没有推演记录。打完一局后，成绩会自动存到这里。'));
+      return;
+    }
+    archive.history.forEach(run => {
+      const row = el('div', 'history-item');
+      // 项目名来自用户输入，一律用 textContent，避免被注入 HTML
+      const badge = el('div', `history-grade ${run.isBrick ? 'brick' : ''}`, run.letter || '?');
+      const main = el('div', 'history-main');
+      const top = el('div', 'history-top');
+      top.appendChild(el('span', 'history-name', run.projectName || '未命名项目'));
+      if (run.isBrick) top.appendChild(el('span', 'history-tag brick', '变砖'));
+      if (run.debug) top.appendChild(el('span', 'history-tag', '调试'));
+      main.appendChild(top);
+      main.appendChild(el('div', 'history-profile', `${run.profileTitle || run.profileId} · ${run.overall} 分`));
+      main.appendChild(el('div', 'history-axes',
+        `安全 ${run.axes.safety} · 战力 ${run.axes.function} · 交付 ${run.axes.delivery} · 人效 ${run.axes.cost} · 士气 ${run.axes.morale}`));
+      row.appendChild(badge);
+      row.appendChild(main);
+      row.appendChild(el('div', 'history-time', formatTime(run.ts)));
+      archivePanelHistory.appendChild(row);
+    });
+  }
+
+  function renderAtlasPanel(archive) {
+    archivePanelAtlas.innerHTML = '';
+    const unlockedCount = Object.keys(archive.profiles).length;
+    atlasProgress.textContent = `${unlockedCount}/${MANAGEMENT_PROFILES.length}`;
+    MANAGEMENT_PROFILES.forEach(prof => {
+      const rec = archive.profiles[prof.id];
+      const card = el('div', `atlas-card ${rec ? 'unlocked' : 'locked'}`);
+      if (rec) {
+        card.appendChild(el('div', 'atlas-title', prof.title));
+        card.appendChild(el('div', 'atlas-tagline', prof.tagline));
+        card.appendChild(el('div', 'atlas-meta',
+          `达成 ${rec.count} 次 · 最高 ${rec.bestOverall} 分 · 首次 ${formatTime(rec.firstAt)}`));
+      } else {
+        card.appendChild(el('div', 'atlas-title', '🔒 ？？？'));
+        card.appendChild(el('div', 'atlas-tagline', '尚未解锁。换一种管理手段再来一局，或许会遇见另一个自己。'));
+      }
+      archivePanelAtlas.appendChild(card);
+    });
+  }
+
+  function switchArchiveTab(tab) {
+    archiveTabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    archivePanelHistory.classList.toggle('hidden', tab !== 'history');
+    archivePanelAtlas.classList.toggle('hidden', tab !== 'atlas');
+  }
+
+  function resetClearButton() {
+    clearArmed = false;
+    btnClearArchive.textContent = '清空本地档案';
+    btnClearArchive.classList.remove('armed');
+  }
+
+  function openArchiveModal(tab = 'history') {
+    const archive = archiveStore.load();
+    renderHistoryPanel(archive);
+    renderAtlasPanel(archive);
+    switchArchiveTab(tab);
+    resetClearButton();
+
+    if (archiveStore.isAvailable()) {
+      archiveStorageNote.classList.add('hidden');
+    } else {
+      archiveStorageNote.textContent = '当前浏览器禁用了本地存储，档案仅在本次打开期间有效，刷新页面后会丢失。';
+      archiveStorageNote.classList.remove('hidden');
+    }
+    modalArchive.classList.remove('hidden');
+    btnCloseArchive.focus();
+  }
+
+  function closeArchiveModal() {
+    modalArchive.classList.add('hidden');
+    resetClearButton();
+  }
+
+  btnOpenArchive.addEventListener('click', () => openArchiveModal('history'));
+  btnOutcomeArchive.addEventListener('click', () => openArchiveModal('atlas'));
+  btnCloseArchive.addEventListener('click', closeArchiveModal);
+  modalArchive.addEventListener('click', e => { if (e.target === modalArchive) closeArchiveModal(); });
+  archiveTabs.forEach(t => t.addEventListener('click', () => switchArchiveTab(t.dataset.tab)));
+
+  // 清空需要点两次：第一次变红提示，第二次才真正删除，避免误触丢档
+  btnClearArchive.addEventListener('click', () => {
+    if (!clearArmed) {
+      clearArmed = true;
+      btnClearArchive.textContent = '再点一次确认清空（不可恢复）';
+      btnClearArchive.classList.add('armed');
+      return;
+    }
+    archiveStore.clear();
+    resetClearButton();
+    openArchiveModal('history');
+    refreshArchiveEntry();
+  });
+
+  refreshArchiveEntry();
 
   // ====================== 2. 组队逻辑 ======================
   const slotsContainer = document.getElementById('team-slots-container');
@@ -433,6 +592,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const emergOptBDesc = document.getElementById('emerg-opt-b-desc');
   const emergOptCText = document.getElementById('emerg-opt-c-text');
   const emergOptCDesc = document.getElementById('emerg-opt-c-desc');
+  const emergAvatar = document.getElementById('emerg-avatar');
+  const emergSpeakerName = document.getElementById('emerg-speaker-name');
+  const emergSpeakerRole = document.getElementById('emerg-speaker-role');
+  let emergencyBusy = false;
 
   function renderCurrentEmergency() {
     const currentEvent = engine.currentMonthEmergencies[engine.currentEmergencyIndex];
@@ -448,6 +611,16 @@ document.addEventListener('DOMContentLoaded', () => {
     emergTitle.textContent = currentEvent.title;
     emergBody.textContent = currentEvent.body;
 
+    // 提出人头像 / 身份：让突发事件像一次真实的"找你拍板"
+    const speaker = EVENT_SPEAKERS[currentEvent.id] || DEFAULT_SPEAKER;
+    emergAvatar.textContent = speaker.avatar;
+    emergSpeakerName.textContent = speaker.name;
+    emergSpeakerRole.textContent = speaker.role;
+    // 重启气泡入场动画
+    emergBody.classList.remove('bubble-in');
+    void emergBody.offsetWidth;
+    emergBody.classList.add('bubble-in');
+
     emergOptAText.textContent = currentEvent.opt_a.text;
     emergOptADesc.textContent = currentEvent.opt_a.desc;
 
@@ -457,26 +630,67 @@ document.addEventListener('DOMContentLoaded', () => {
     emergOptCText.textContent = currentEvent.opt_c.text;
     emergOptCDesc.textContent = currentEvent.opt_c.desc;
 
+    emergencyBusy = false;
     showScreen('emergencies');
   }
 
+  // ---- 高管对话卡片：选择后展示「我的回应 + 对方/组织反应」，取代原生 alert ----
+  const modalDialogue = document.getElementById('modal-dialogue');
+  const dialogueOptTag = document.getElementById('dialogue-opt-tag');
+  const dialogueMyText = document.getElementById('dialogue-my-text');
+  const dialogueAvatar = document.getElementById('dialogue-avatar');
+  const dialogueWho = document.getElementById('dialogue-who');
+  const dialogueEffect = document.getElementById('dialogue-effect');
+  const btnDialogueContinue = document.getElementById('btn-dialogue-continue');
+  let pendingEmergencyResult = null; // 等玩家点"继续"后再跳转
+
+  function showDialogueCard(res) {
+    const speaker = EVENT_SPEAKERS[res.eventResolved.id] || DEFAULT_SPEAKER;
+    const optKey = res.chosenOption;
+    const optText = res.eventResolved[`opt_${optKey.toLowerCase()}`].text;
+
+    dialogueOptTag.textContent = OPTION_TAGS[optKey];
+    dialogueMyText.textContent = optText;
+    dialogueAvatar.textContent = speaker.avatar;
+    dialogueWho.textContent = `${speaker.name} · 组织反应`;
+    dialogueEffect.textContent = res.effectDesc;
+
+    // 重启两条气泡的依次入场动画
+    [dialogueMyText, dialogueEffect].forEach(node => {
+      node.classList.remove('bubble-in');
+      void node.offsetWidth;
+      node.classList.add('bubble-in');
+    });
+
+    pendingEmergencyResult = res;
+    modalDialogue.classList.remove('hidden');
+    btnDialogueContinue.focus();
+  }
+
+  btnDialogueContinue.addEventListener('click', () => {
+    const res = pendingEmergencyResult;
+    if (!res) return;
+    pendingEmergencyResult = null;
+    modalDialogue.classList.add('hidden');
+
+    if (res.hasMoreEmergenciesThisMonth) {
+      renderCurrentEmergency();
+    } else if (res.readyForSOP) {
+      renderSOPPage();
+      showScreen('sop');
+    } else {
+      updateMonthlyBoard();
+      showScreen('monthlyBoard');
+    }
+  });
+
   document.querySelectorAll('.option-card').forEach(card => {
     card.addEventListener('click', () => {
+      if (emergencyBusy) return; // 防止快速连点重复结算同一事件
+      emergencyBusy = true;
       const opt = card.dataset.opt;
       const res = engine.resolveEmergency(opt);
-      alert(`【管理决策落地】\n${res.effectDesc}`);
-
-      if (res.hasMoreEmergenciesThisMonth) {
-        renderCurrentEmergency();
-      } else {
-        if (res.readyForSOP) {
-          renderSOPPage();
-          showScreen('sop');
-        } else {
-          updateMonthlyBoard();
-          showScreen('monthlyBoard');
-        }
-      }
+      showDialogueCard(res);
     });
   });
 
@@ -557,7 +771,48 @@ document.addEventListener('DOMContentLoaded', () => {
     btnConfirmSopRelease.disabled = (decided < 6);
   }
 
-  btnWaiveAll.addEventListener('click', () => {
+  // ---- 一键全部 Waive：二次警示确认 ----
+  const modalWaiveConfirm = document.getElementById('modal-waive-confirm');
+  const waiveConfirmList = document.getElementById('waive-confirm-list');
+  const btnWaiveCancel = document.getElementById('btn-waive-cancel');
+  const btnWaiveConfirm = document.getElementById('btn-waive-confirm');
+
+  function openWaiveConfirm() {
+    const items = engine.getSOPStatus().items;
+    // 只用「公开信息」做提示：已审计项可看真实风险；未审计项只给数量，不泄露真值
+    const redItems = items.filter(it => it.is_audited && it.is_red);
+    const auditedItems = items.filter(it => it.is_audited);
+    const unauditedCount = items.length - auditedItems.length;
+    const repairedItems = items.filter(it => it.decision === 'repair');
+
+    waiveConfirmList.innerHTML = '';
+    const addLine = (text, level) => waiveConfirmList.appendChild(el('li', level || '', text));
+
+    if (redItems.length > 0) {
+      addLine(`已审计确认的高危项有 ${redItems.length} 条（${redItems.map(it => it.title).join('、')}），真实风险 ≥ 60%，你仍要带着它们上路。`, 'danger');
+    }
+    if (unauditedCount > 0) {
+      addLine(`有 ${unauditedCount} 条红线你没有做过隔级摸底，页面上的风险只是各组"自报"，真实风险可能远高于显示值。`, 'warn');
+    }
+    if (repairedItems.length > 0) {
+      addLine(`你已选择修复的 ${repairedItems.length} 条（${repairedItems.map(it => it.title).join('、')}）将被覆盖为 Waive。`, 'warn');
+    }
+    addLine('Waive 放行真实风险较高的项会扣安全分；安全分 ≤ 25 将直接判定项目失败（变砖）。');
+    addLine('确认后仍可逐条改回"修复"，直到你点击最终的「确认放行」。');
+
+    modalWaiveConfirm.classList.remove('hidden');
+    btnWaiveCancel.focus(); // 默认焦点放在安全选项上，避免回车误触
+  }
+
+  function closeWaiveConfirm() {
+    modalWaiveConfirm.classList.add('hidden');
+  }
+
+  btnWaiveAll.addEventListener('click', openWaiveConfirm);
+  btnWaiveCancel.addEventListener('click', closeWaiveConfirm);
+  modalWaiveConfirm.addEventListener('click', e => { if (e.target === modalWaiveConfirm) closeWaiveConfirm(); });
+  btnWaiveConfirm.addEventListener('click', () => {
+    closeWaiveConfirm();
     engine.waiveAllSOP();
     renderSOPPage();
   });
@@ -569,7 +824,26 @@ document.addEventListener('DOMContentLoaded', () => {
         sopErrorBanner.textContent = '';
         sopErrorBanner.classList.add('hidden');
       }
-      renderOutcomePage(outcome);
+      // 结局落定后写入本地存档（confirmSOPRelease 自带防重复，这里天然只记录一次）
+      const saveMeta = archiveStore.recordRun({
+        projectName: engine.projectName,
+        seed: engine.seed,
+        letter: outcome.letter,
+        overall: outcome.overall,
+        isBrick: outcome.isBrick,
+        profileId: outcome.managementProfile.id,
+        profileTitle: outcome.managementProfile.title,
+        axes: {
+          safety: outcome.axes.safety.score,
+          function: outcome.axes.function.score,
+          delivery: outcome.axes.delivery.score,
+          cost: outcome.axes.cost.score,
+          morale: outcome.axes.morale.score
+        },
+        debug: isDebug
+      });
+      refreshArchiveEntry();
+      renderOutcomePage(outcome, saveMeta);
       showScreen('outcome');
     } catch (err) {
       if (sopErrorBanner) {
@@ -611,12 +885,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const profileTitle = document.getElementById('profile-title');
   const profileTagline = document.getElementById('profile-tagline');
   const profileDesc = document.getElementById('profile-desc');
+  const profileUnlockTag = document.getElementById('profile-unlock-tag');
+  const profileAtlasCount = document.getElementById('profile-atlas-count');
 
   const anonymousFeedbackList = document.getElementById('anonymous-feedback-list');
   const truthItemsList = document.getElementById('truth-items-list');
   const btnRestart = document.getElementById('btn-restart');
 
-  function renderOutcomePage(outcome) {
+  function renderOutcomePage(outcome, saveMeta) {
     outcomeGradeBadge.textContent = outcome.letter;
     if (outcome.isBrick) {
       outcomeGradeBadge.style.background = "linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)";
@@ -683,6 +959,15 @@ document.addEventListener('DOMContentLoaded', () => {
     profileTagline.textContent = outcome.managementProfile.tagline;
     profileDesc.textContent = outcome.managementProfile.desc;
 
+    // 图鉴进度：首次达成该画像时亮出"新解锁"
+    if (saveMeta) {
+      profileUnlockTag.classList.toggle('hidden', !saveMeta.newlyUnlocked);
+      profileAtlasCount.textContent = `图鉴 ${saveMeta.unlockedCount}/${MANAGEMENT_PROFILES.length}${saveMeta.saved ? '' : '（本地存储不可用，未持久保存）'}`;
+    } else {
+      profileUnlockTag.classList.add('hidden');
+      profileAtlasCount.textContent = '';
+    }
+
     // 团队匿名吐槽群
     anonymousFeedbackList.innerHTML = '';
     outcome.anonymousFeedback.forEach(fb => {
@@ -720,6 +1005,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   btnRestart.addEventListener('click', () => {
     engine.initProject(engine.projectName);
+    refreshArchiveEntry();
     showScreen('home');
+  });
+
+  // Esc 关闭可取消的弹窗（对话卡片需要明确点"继续"，不响应 Esc）
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!modalWaiveConfirm.classList.contains('hidden')) closeWaiveConfirm();
+    else if (!modalArchive.classList.contains('hidden')) closeArchiveModal();
   });
 });

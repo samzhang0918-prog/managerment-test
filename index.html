@@ -29,6 +29,7 @@
           <input type="text" id="project-name-input" maxlength="16" placeholder="例如：代号-泰山 / 蓬莱-50" value="代号-麒麟">
         </div>
         <button id="btn-start" class="btn btn-primary btn-block">就任总监 · 开始排兵布阵</button>
+        <button id="btn-open-archive" class="btn btn-secondary btn-block archive-entry">📁 我的管理档案</button>
       </div>
     </section>
 
@@ -226,7 +227,15 @@
       </div>
 
       <div class="emergency-main-card">
-        <p id="emerg-body" class="emerg-body-text">困境正文描述</p>
+        <div class="speaker-row">
+          <div id="emerg-avatar" class="speaker-avatar" aria-hidden="true">📣</div>
+          <div class="speaker-meta">
+            <div id="emerg-speaker-name" class="speaker-name">组织信号</div>
+            <div id="emerg-speaker-role" class="speaker-role">向你汇报</div>
+          </div>
+        </div>
+        <p id="emerg-body" class="emerg-body-text bubble bubble-left">困境正文描述</p>
+        <div class="reply-hint">你会怎么回应？</div>
       </div>
 
       <div class="options-container">
@@ -339,6 +348,8 @@
       <div class="mgmt-profile-card">
         <div class="profile-header">
           <span class="profile-badge">管理风格深度诊断</span>
+          <span id="profile-unlock-tag" class="unlock-tag hidden">🆕 新解锁画像</span>
+          <span id="profile-atlas-count" class="atlas-count"></span>
           <h3 id="profile-title">古德哈特陷阱亲历者</h3>
         </div>
         <blockquote id="profile-tagline" class="profile-tagline">“当你把指标变成考核军令状时，你得到的只有精装修的假象。”</blockquote>
@@ -362,12 +373,75 @@
 
       <div class="restart-box">
         <button id="btn-restart" class="btn btn-primary btn-block">复盘完毕 · 重新上任挑战新局</button>
+        <button id="btn-outcome-archive" class="btn btn-secondary btn-block">📁 查看我的管理档案</button>
       </div>
     </section>
+
+    <!-- 弹窗：突发困境 · 高管对话卡片（取代原生 alert） -->
+    <div id="modal-dialogue" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="dialogue-title">
+      <div class="modal-card dialogue-card">
+        <div id="dialogue-title" class="dialogue-title">决策落地</div>
+
+        <div class="chat-line chat-me">
+          <div class="chat-content">
+            <div class="chat-who">总监（你）· <span id="dialogue-opt-tag">手段 A</span></div>
+            <div id="dialogue-my-text" class="bubble bubble-right">我的回应</div>
+          </div>
+          <div class="speaker-avatar me" aria-hidden="true">🧑‍💼</div>
+        </div>
+
+        <div class="chat-line chat-them">
+          <div id="dialogue-avatar" class="speaker-avatar" aria-hidden="true">📣</div>
+          <div class="chat-content">
+            <div id="dialogue-who" class="chat-who">对方</div>
+            <div id="dialogue-effect" class="bubble bubble-left">组织反应</div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="btn-dialogue-continue" class="btn btn-primary btn-block">我知道了，继续</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗：一键全部 Waive 二次警示确认 -->
+    <div id="modal-waive-confirm" class="modal-overlay hidden" role="alertdialog" aria-modal="true" aria-labelledby="waive-confirm-title" aria-describedby="waive-confirm-desc">
+      <div class="modal-card danger-card">
+        <div class="danger-badge">⚠️ 高风险操作</div>
+        <h3 id="waive-confirm-title">确认把 6 条红线全部 Waive？</h3>
+        <p id="waive-confirm-desc" class="modal-desc">Waive 意味着你<strong>不花钱、不延期，把风险原样焊在量产车上</strong>。这是不可忽视的签字动作：</p>
+        <ul id="waive-confirm-list" class="waive-list"></ul>
+        <div class="modal-footer button-group flex-col">
+          <button id="btn-waive-cancel" class="btn btn-secondary btn-block">再想想，回去逐条评估</button>
+          <button id="btn-waive-confirm" class="btn btn-danger btn-block">我已知晓风险，全部 Waive</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 弹窗：我的管理档案（历史推演 + 画像图鉴） -->
+    <div id="modal-archive" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="archive-title">
+      <div class="modal-card archive-card">
+        <div class="modal-header">
+          <h3 id="archive-title">📁 我的管理档案</h3>
+          <button id="btn-close-archive" class="close-x" aria-label="关闭">&times;</button>
+        </div>
+        <div id="archive-storage-note" class="archive-note hidden"></div>
+        <div class="archive-tabs" role="tablist">
+          <button id="tab-history" class="archive-tab active" role="tab" data-tab="history">历史推演</button>
+          <button id="tab-atlas" class="archive-tab" role="tab" data-tab="atlas">画像图鉴 <span id="atlas-progress"></span></button>
+        </div>
+        <div id="archive-panel-history" class="archive-panel"></div>
+        <div id="archive-panel-atlas" class="archive-panel hidden"></div>
+        <div class="modal-footer">
+          <button id="btn-clear-archive" class="btn btn-secondary btn-block btn-clear">清空本地档案</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="./game-data.js"></script>
   <script src="./game-engine.js"></script>
+  <script src="./storage.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

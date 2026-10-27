@@ -1177,3 +1177,359 @@ body {
 .restart-box {
   margin-bottom: 20px;
 }
+
+/* ====================== P2：高管对话卡片 / Waive 警示 / 本地存档 ====================== */
+
+.btn-danger {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+}
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+}
+
+/* 首页档案入口 */
+.archive-entry {
+  margin-top: 10px;
+}
+
+/* ---- 突发困境：提出人 + 对话气泡 ---- */
+.speaker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.speaker-avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #1e293b;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+}
+.speaker-avatar.me {
+  background: rgba(2, 132, 199, 0.25);
+  border-color: var(--primary);
+}
+.speaker-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+.speaker-role {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+.bubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: break-word;
+}
+.bubble-left {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid var(--border-color);
+  border-top-left-radius: 4px;
+}
+.bubble-right {
+  background: rgba(2, 132, 199, 0.25);
+  color: #e0f2fe;
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  border-top-right-radius: 4px;
+}
+.reply-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--accent-gold);
+  text-align: right;
+}
+.bubble-in {
+  animation: bubbleIn 0.35s ease both;
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- 对话卡片弹窗 ---- */
+.dialogue-card {
+  gap: 4px;
+}
+.dialogue-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.chat-line {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.chat-me {
+  justify-content: flex-end;
+}
+.chat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  max-width: 82%;
+}
+.chat-me .chat-content {
+  align-items: flex-end;
+}
+.chat-who {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+/* 第二条气泡（组织反应）稍作延迟，形成"你说 → 对方回应"的节奏 */
+.chat-them .bubble-in {
+  animation-delay: 0.35s;
+}
+
+/* ---- Waive 二次警示 ---- */
+.danger-card {
+  border-top: 2px solid var(--danger);
+}
+.danger-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fca5a5;
+  background: var(--danger-bg);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  padding: 2px 10px;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.danger-card h3 {
+  font-size: 17px;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.danger-card .modal-desc strong {
+  color: #fca5a5;
+}
+.waive-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.waive-list li {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #cbd5e1;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 3px solid #475569;
+  border-radius: 4px;
+}
+.waive-list li.warn   { border-left-color: var(--warning); color: #fde68a; }
+.waive-list li.danger { border-left-color: var(--danger);  color: #fca5a5; }
+
+/* ---- 管理档案 ---- */
+.archive-card {
+  max-height: 88vh;
+}
+.archive-note {
+  font-size: 12px;
+  color: #fde68a;
+  background: var(--warning-bg);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.archive-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.archive-tab {
+  flex: 1;
+  min-height: 40px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: #1e293b;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.archive-tab.active {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: var(--primary);
+  color: #fff;
+}
+.archive-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+}
+.archive-empty {
+  font-size: 13px;
+  color: var(--text-sub);
+  text-align: center;
+  padding: 28px 8px;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+}
+.history-grade {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #000;
+}
+.history-grade.brick {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: #fff;
+}
+.history-main {
+  flex: 1;
+  min-width: 0;
+}
+.history-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.history-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.history-tag {
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-muted);
+}
+.history-tag.brick {
+  background: var(--danger-bg);
+  color: #fca5a5;
+}
+.history-profile {
+  font-size: 12px;
+  color: var(--primary);
+  margin-top: 2px;
+}
+.history-axes {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+.history-time {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.atlas-card {
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  border: 1px solid var(--border-color);
+}
+.atlas-card.unlocked {
+  background: linear-gradient(135deg, #1e1b4b 0%, #1e293b 100%);
+  border-color: #6366f1;
+}
+.atlas-card.locked {
+  background: rgba(10, 14, 23, 0.6);
+  opacity: 0.75;
+}
+.atlas-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 4px;
+}
+.atlas-tagline {
+  font-size: 12px;
+  color: #c7d2fe;
+  font-style: italic;
+  line-height: 1.5;
+}
+.atlas-card.locked .atlas-tagline {
+  color: var(--text-sub);
+  font-style: normal;
+}
+.atlas-meta {
+  font-size: 11px;
+  color: var(--text-sub);
+  margin-top: 6px;
+}
+
+.btn-clear {
+  font-size: 13px;
+  color: var(--text-sub);
+}
+.btn-clear.armed {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: #fca5a5;
+}
+
+/* ---- 结局页：图鉴解锁标记 ---- */
+.unlock-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
+  background: var(--accent-gold);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.atlas-count {
+  margin-left: 8px;
+  font-size: 11px;
+  color: #a5b4fc;
+}
+.restart-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* 尊重系统"减少动态效果"设置 */
+@media (prefers-reduced-motion: reduce) {
+  .bubble-in { animation: none; }
+}
+.archive-card .modal-footer {
+  margin-top: 14px;
+}
